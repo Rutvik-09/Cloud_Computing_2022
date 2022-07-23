@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Handicraft app</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' href='cart.css'>
+    <script src='addToCart.js'></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card" id="item1">
+            <img src="rope-making.jpg">
+            <div class="title"> Rope Making </div>
+
+            <div>
+                <label>COST: </label>
+                <select>
+                    <option>$10</option>
+                    <option>$25</option>
+                    <option>$30</option>
+                </select>
+            </div>
+            <button onclick="addToCart(item1)">Add To Cart</button>
+        </div>
+
+        <div class="card" id="item2">
+            <img src="tissue-paper-vase-4.jpg">
+            <div class="title"> Paper Vase </div>
+
+            <div>
+                <label>COST: </label>
+                <select>
+                    <option>$10</option>
+                    <option>$25</option>
+                    <option>$30</option>
+                </select>
+            </div>
+            <button onclick="addToCart(item2)">Add To Cart</button>
+        </div>
+    </div>
+
+        <div class="cart" id="cart">
+            <div class="title"> CART </div> <hr/>
+            <div id="title"></div>
+
+        </div>
+
+</body>
+</html>
+
