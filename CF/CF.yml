@@ -1,0 +1,302 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Metadata:
+  Generator: former2
+Description: ''
+Resources:
+  EC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-052efd3df9dad4825
+      InstanceType: t2.micro
+      KeyName: vockey
+      IamInstanceProfile: LabInstanceProfile
+      Tags:
+        - Key: Name
+          Value: CloudProject
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Description: ''
+    Properties:   
+      FunctionName: add-product1
+      Handler: add-product.lambda_handler
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: handicraft-lambda
+        S3Key: add-product.zip
+      MemorySize: 128
+      Role: arn:aws:iam::946670177656:role/LabRole
+      Runtime: python3.9
+      
+  LambdaFunction2:
+    Type: 'AWS::Lambda::Function'
+    Description: ''
+    Properties: 
+      FunctionName: get-product1
+      Handler: get-product.lambda_handler
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: handicraft-lambda
+        S3Key: get-product.zip
+      MemorySize: 128
+      Role: arn:aws:iam::946670177656:role/LabRole
+      Runtime: python3.9
+
+  LambdaFunction3:
+    Type: 'AWS::Lambda::Function'
+    Description: ''
+    Properties: 
+      FunctionName: register-user1
+      Handler: register-user.lambda_handler
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: handicraft-lambda
+        S3Key: register-user.zip
+      MemorySize: 128
+      Role: arn:aws:iam::946670177656:role/LabRole
+      Runtime: python3.9
+
+  LambdaFunction4:
+    Type: 'AWS::Lambda::Function'
+    Description: ''
+    Properties: 
+      FunctionName: send-mail1
+      Handler: send-mail.lambda_handler
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: handicraft-lambda
+        S3Key: send-mail.zip
+      MemorySize: 128
+      Role: arn:aws:iam::946670177656:role/LabRole
+      Runtime: python3.9    
+
+  DynamoDBTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      AttributeDefinitions: 
+        - 
+          AttributeName: "name"
+          AttributeType: "S"
+      TableName: "Products_Handicrafts"
+      KeySchema: 
+        - 
+          AttributeName: "name"
+          KeyType: "HASH"
+      ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+  DynamoDBTable2:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      AttributeDefinitions: 
+        - 
+          AttributeName: "name"
+          AttributeType: "S"
+      TableName: "Users_Handicrafts"
+      KeySchema: 
+        - 
+          AttributeName: "name"
+          KeyType: "HASH"
+      ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+  SNSTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+        DisplayName: HandiCraft E-Store
+        TopicName: Registration_Handicraft_Mail        
+
+  CognitoUserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      UserPoolName: Registration_Users_Handicraft
+      Policies: 
+          PasswordPolicy: 
+              MinimumLength: 8
+              RequireUppercase: true
+              RequireLowercase: true
+              RequireNumbers: true
+              RequireSymbols: true
+              TemporaryPasswordValidityDays: 7
+
+      Schema: 
+        -
+          Name: "email"
+          AttributeDataType: "String"
+          DeveloperOnlyAttribute: false
+          Mutable: true
+          Required: true
+          StringAttributeConstraints: 
+              MinLength: "0"
+              MaxLength: "2048"
+        - 
+          Name: "email_verified"
+          AttributeDataType: "Boolean"
+          DeveloperOnlyAttribute: false
+          Mutable: true
+          Required: false
+        
+      AutoVerifiedAttributes: 
+        - "email"
+      UsernameAttributes: 
+        - "email"
+  
+      AccountRecoverySetting: 
+          RecoveryMechanisms: 
+            - 
+              Priority: 1
+              Name: "verified_email"
+            - 
+              Priority: 2
+              Name: "verified_phone_number"
+
+      UsernameConfiguration: 
+          CaseSensitive: true
+
+      VerificationMessageTemplate: 
+          EmailMessageByLink: "Please click the link below to verify your email address. {##Verify Email##} "
+          EmailSubjectByLink: "Your verification link"
+          DefaultEmailOption: "CONFIRM_WITH_LINK"
+
+  
+  APIGatewayRestAPI1:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties: 
+      Name: Apis-handicraft
+    DependsOn:
+      - LambdaFunction
+      - LambdaFunction2
+      - LambdaFunction3
+
+
+  APIGatewayResource:
+     Type: 'AWS::ApiGateway::Resource'
+     Properties:
+       RestApiId: !Ref APIGatewayRestAPI1
+       ParentId: !GetAtt
+        - APIGatewayRestAPI1
+        - RootResourceId
+       PathPart: products
+     DependsOn:
+       APIGatewayRestAPI1 
+
+  APIGatewayResource2:
+     Type: 'AWS::ApiGateway::Resource'
+     Properties:
+       RestApiId: !Ref APIGatewayRestAPI1
+       ParentId: !GetAtt
+        - APIGatewayRestAPI1
+        - RootResourceId
+       PathPart: homepage
+     DependsOn:
+       APIGatewayRestAPI1   
+
+  APIGatewayResource3:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref APIGatewayRestAPI1
+      ParentId: !GetAtt
+      - APIGatewayRestAPI1
+      - RootResourceId
+      PathPart: register
+    DependsOn:
+       APIGatewayRestAPI1        
+
+  APIGateWayMethod: 
+     Type: 'AWS::ApiGateway::Method'
+     Properties:
+        RestApiId: !Ref APIGatewayRestAPI1
+        ResourceId: !Ref APIGatewayResource
+        HttpMethod: POST
+        AuthorizationType: None 
+        MethodResponses: 
+          - StatusCode: 200 
+        Integration:
+          Type: AWS
+          IntegrationResponses: 
+          - StatusCode: 200 
+          IntegrationHttpMethod: POST
+          Uri: !Sub 
+            - >-
+              arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+            - LambdaFunctionNameArn: !GetAtt LambdaFunction.Arn
+     DependsOn:
+        - APIGatewayResource      
+  
+
+  APIGateWayMethod2: 
+     Type: 'AWS::ApiGateway::Method'
+     Properties:
+        RestApiId: !Ref APIGatewayRestAPI1
+        ResourceId: !Ref APIGatewayResource2
+        HttpMethod: GET
+        AuthorizationType: None 
+        MethodResponses: 
+          - StatusCode: 200 
+        Integration:
+          Type: AWS
+          IntegrationResponses: 
+          - StatusCode: 200 
+          IntegrationHttpMethod: GET
+          Uri: !Sub 
+            - >-
+              arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction2.Arn}/invocations
+            - LambdaFunctionNameArn: !GetAtt LambdaFunction2.Arn
+     DependsOn:
+        - APIGatewayResource2     
+
+
+  APIGateWayMethod3: 
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref APIGatewayRestAPI1
+      ResourceId: !Ref APIGatewayResource3
+      HttpMethod: POST
+      AuthorizationType: None 
+      MethodResponses: 
+        - StatusCode: 200 
+      Integration:
+        Type: AWS
+        IntegrationResponses: 
+        - StatusCode: 200 
+        IntegrationHttpMethod: POST
+        Uri: !Sub 
+          - >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction3.Arn}/invocations
+          - LambdaFunctionNameArn: !GetAtt LambdaFunction3.Arn
+    DependsOn:
+      - APIGatewayResource3 
+
+  APIGatewayDeployment:
+     Type: 'AWS::ApiGateway::Deployment'
+     Properties:
+       RestApiId: !Ref APIGatewayRestAPI1
+       StageName: production
+     DependsOn: 
+       - APIGateWayMethod
+       - APIGateWayMethod2
+       - APIGateWayMethod3
+  APIGatewayPermission:
+     Type: 'AWS::Lambda::Permission'
+     Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+     DependsOn:
+      - APIGatewayDeployment
+  APIGatewayPermission2:
+     Type: 'AWS::Lambda::Permission'
+     Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt LambdaFunction2.Arn
+      Principal: apigateway.amazonaws.com
+     DependsOn:
+      - APIGatewayDeployment
+
+  
+     
